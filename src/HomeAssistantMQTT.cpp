@@ -1,6 +1,6 @@
 #include "HomeAssistantMQTT.h"
-#define DEBUG
-#define CFG_ON_SERIAL
+//#define DEBUG
+//#define CFG_ON_SERIAL
 
 HomeAssistantMQTT::HomeAssistantMQTT()
 {
@@ -29,10 +29,15 @@ void HomeAssistantMQTT::begin(WiFiClient* wifiClient, const char* server, const 
 #endif
 
   mqttClient = new PubSubClient(*wifiClient);
-  mqttClient->setBufferSize(1024);
+  //Changed BufferSide from 1024 to 2048 to accomodate project with many topics.
+  //This should be parameterized in the header file rather than hardcoded here.
+  mqttClient->setBufferSize(2048);
   mqttClient->setServer(server, port);
   mqttClient->setCallback(std::bind(&HomeAssistantMQTT::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  mqttClient->setKeepAlive(5);
+  //KeepAlive was set to 5 by default. Changed it to 15 seconds.
+  //PubSubClient default is 15 seconds.
+  //This sorted out the weird connection 'resets' that my application was experiencing.
+  mqttClient->setKeepAlive(15);
 }
 
 void HomeAssistantMQTT::loop()
@@ -124,7 +129,10 @@ void HomeAssistantMQTT::publishConfig(const char* type, String category, String 
   nameForTopic.replace(" ", "_");
   String COMMAND_TOPIC = Manufacturer + "/" + DeviceName + "/set/" + (commandTopicName.length() > 0 ? commandTopicName : nameForTopic);
 
-  StateTopic = new char[Manufacturer.length() + DeviceName.length() + 1];
+  //Original code had length + 1 which IS a bug as final length WITH null terminator will be + 2.
+  //Experienced string corruption when Manufacturer and DeviceName were longer than two CHAR each.
+  //Changing this length to + 2 has cleared up that issue.
+  StateTopic = new char[Manufacturer.length() + DeviceName.length() + 2];
   strcpy(StateTopic, Manufacturer.c_str());
   strcat(StateTopic, "/");
   strcat(StateTopic, DeviceName.c_str());
@@ -161,11 +169,13 @@ void HomeAssistantMQTT::publishConfig(const char* type, String category, String 
 
   mqttClient->publish(topic.c_str(), data.c_str(), true);
 
-  if (commandTopic)
+  if (commandTopic){
     mqttClient->subscribe(COMMAND_TOPIC.c_str());
+  }
 
-  if (stateTopic)
+  if (stateTopic) {
     setValue(nameForTopic, startupValue);
+  }	
 }
 
 void HomeAssistantMQTT::setValue(String item, String value)
@@ -184,8 +194,13 @@ void HomeAssistantMQTT::setValue(String item, String value)
     }
     else
     {
-      // if we reach an entry with pointer 0, that means we reached end of existing items and didn't find it. Now create a new one.
+      // if we reach an entry with pointer 0, that means we reached the end of existing items and didn't find it. Now create a new one.
       ItemValue* iv = new ItemValue;
+// Comment:  This allocation of item and value at 31 chars sets a hard limit on the length of the item name and its value string.
+// NOWHERE is this defined as a parameter or documented AND if you exceed this limit this method silently adds a new value that it can never find
+// as it will never match the incoming string on subsequent runs of setValue.
+// ADDITIONALLY, the copy of the overly long string into the to short char array results in a buffer overflow and likely corrupts memory.
+// Some protection against this corruption should be added to the code.	  
       iv->item = new char[31];
       iv->value = new char[31];
       strcpy(iv->item, item.c_str());
@@ -198,14 +213,16 @@ void HomeAssistantMQTT::setValue(String item, String value)
 }
 
 String HomeAssistantMQTT::getValue(String item)
+// Modified this method to use a for loop so that it actually stops at HAMQTT_MAXITEMS rather than crash the uP!
+// Original code had a while loop with i < HAMQTT_MAXITEMS condition but did not actually increment i as it looped.
 {
-  int i = 0;
-  while (i < HAMQTT_MAXITEMS)
+  for (int i = 0; i < HAMQTT_MAXITEMS; i++)
   {
     if (values[i] != 0)
     {
-      if (strcmp(values[i]->item, item.c_str()) == 0)
+      if (strcmp(values[i]->item, item.c_str()) == 0) {
         return String(values[i]->value);
+	  }
     }
   }
   return String("");
@@ -299,12 +316,14 @@ void HomeAssistantMQTT::MqttCallback(char* topic, byte* payload, unsigned int le
         if (cb_callback != NULL)
           cb_callback(String(kv.key().c_str()), String(kv.value().as<const char*>()), true);
       }
-      sendValues();
+// Why is this call back function sending the values back to the same MQTT TOPIC that they just came from????
+// Commented this out on 11-Dec-2025
+//      sendValues();
     }
     
     mqttClient->unsubscribe(StateTopic);
   }
-  else
+  else  // Received message on the device's 'set' (Command) topic
   {
     String COMMAND_TOPIC = Manufacturer + "/" + DeviceName + "/set/";
     if (strncmp(topic, COMMAND_TOPIC.c_str(), COMMAND_TOPIC.length()) == 0)
