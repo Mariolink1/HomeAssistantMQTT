@@ -31,7 +31,7 @@ void HomeAssistantMQTT::begin(WiFiClient* wifiClient, const char* server, const 
   mqttClient = new PubSubClient(*wifiClient);
   //Changed BufferSide from 1024 to 2048 to accomodate project with many topics.
   //This should be parameterized in the header file rather than hardcoded here.
-  mqttClient->setBufferSize(2048);
+  mqttClient->setBufferSize(HAMQTT_BUFFERSIZE);
   mqttClient->setServer(server, port);
   mqttClient->setCallback(std::bind(&HomeAssistantMQTT::MqttCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   //KeepAlive was set to 5 by default. Changed it to 15 seconds.
@@ -201,8 +201,8 @@ void HomeAssistantMQTT::setValue(String item, String value)
 // as it will never match the incoming string on subsequent runs of setValue.
 // ADDITIONALLY, the copy of the overly long string into the to short char array results in a buffer overflow and likely corrupts memory.
 // Some protection against this corruption should be added to the code.	  
-      iv->item = new char[31];
-      iv->value = new char[31];
+      iv->item = new char[HAMQTT_MAXITEMSIZE+1];
+      iv->value = new char[HAMQTT_MAXITEMSIZE+1];
       strcpy(iv->item, item.c_str());
       strcpy(iv->value, value.c_str());
       values[i] = iv;

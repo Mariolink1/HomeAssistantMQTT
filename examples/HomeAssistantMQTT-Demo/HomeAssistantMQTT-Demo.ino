@@ -2,8 +2,11 @@
 #define CFG_ON_SERIAL
 
 #include "Arduino.h"
-#include "ESP8266WiFi.h"
-
+#if defined(ESP32)
+  #include <WiFi.h>
+#else  //it's the ESP8266
+  #include <ESP8266WiFi.h>
+#endif
 #include "HomeAssistantMQTT.h"
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -128,9 +131,10 @@ void HAMQTT_Callback(String item, String payload, bool readFromMQTT)
 
   // PROCESS NEW DATA HERE
 
-  if (item != "Command")
-  {
-    mqtt.setValue(item, payload);
-    mqtt.sendValues();
+  if (!readFromMQTT){  //Only do this if it came from '/set' topic
+    if (item != "Command")  {
+      mqtt.setValue(item, payload);
+      mqtt.sendValues();
+    }
   }
 }
