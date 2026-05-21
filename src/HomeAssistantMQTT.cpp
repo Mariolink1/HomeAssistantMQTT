@@ -97,7 +97,7 @@ void HomeAssistantMQTT::publishConfigNumber(String category, String name, String
   publishConfig("number", category, "", "", name, icon, unit, true, true, "", complement, startupValue);
 }
 
-void HomeAssistantMQTT::publishConfigText(String category, String name, String icon, String min, String max, String startupValue)
+void HomeAssistantMQTT::publishConfigText(String category, String name, String icon, String startupValue)
 {
   publishConfig("text", category, "", "", name, icon, "", true, true, "", "", startupValue);
 }
