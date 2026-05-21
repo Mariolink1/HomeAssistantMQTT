@@ -1,11 +1,17 @@
 #pragma once
 
 #include "Arduino.h"
-#include "ESP8266WiFi.h"
+#ifdef ESP32
+	#include "WiFi.h"
+#else
+	#include "ESP8266WiFi.h"
+#endif
 #include "PubSubClient.h"
 #include "ArduinoJson.h"
 
-#define HAMQTT_MAXITEMS 30
+#define HAMQTT_MAXITEMS 40		//Maximum number of items allowed
+#define HAMQTT_BUFFERSIZE 2028  //Maximum lenght of 'subscribed to' topic string
+#define HAMQTT_MAXITEMSIZE 30   //Maximum lenght of item and value strings
 
 struct ItemValue
 {
@@ -56,6 +62,7 @@ class HomeAssistantMQTT
     void publishConfigSensor(String deviceClass, String stateClass, String name, String icon, String unit, String startupValue);
     void publishConfigBinarySensor(String deviceClass, String name, String icon, String payloadOff, String payloadOn, String startupValue);
     void publishConfigNumber(String category, String name, String icon, String unit, String min, String max, String startupValue);
+	void publishConfigText(String category, String name, String icon, String min, String max, String startupValue);
     void publishConfigButton(String category, String name, String icon, String commandTopicName, String payload);
     void publishConfigSelect(String category, String name, String icon, String options[], unsigned short optionsCount, String startupValue);
     void publishConfigSwitch(String category, String name, String icon, String startupValue);
