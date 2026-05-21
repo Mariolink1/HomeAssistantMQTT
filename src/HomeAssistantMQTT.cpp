@@ -99,7 +99,7 @@ void HomeAssistantMQTT::publishConfigNumber(String category, String name, String
 
 void HomeAssistantMQTT::publishConfigText(String category, String name, String icon, String min, String max, String startupValue)
 {
-  String complement = R"(,"min":)" + min + R"(,"max":)" + max + "";
+  String complement = ",\"min\":" + min + ",\"max\":" + max + "";
   publishConfig("text", category, "", "", name, icon, "", true, true, "", complement, startupValue);
 }
 
