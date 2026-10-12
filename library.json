@@ -5,7 +5,7 @@
   "keywords": "hass, mqtt",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sierramike/HomeAssistantMQTT"
+    "url": "https://github.com/Mariolink1/HomeAssistantMQTT.git"
   },
   "authors": [
     {
