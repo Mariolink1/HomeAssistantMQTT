@@ -105,7 +105,7 @@ void HomeAssistantMQTT::publishConfigBinarySensor(String category, String device
 
 void HomeAssistantMQTT::publishConfigText(String category, String name, String icon, String startupValue)
 {
-  publishConfig("text", category, "", "", name, icon, "", true, true, "", "", startupValue);
+  publishConfig("text", category, "", "", name, icon, "", true, true, true, "", "", startupValue);
 }
 
 void HomeAssistantMQTT::publishConfigNumber(String category, String name, String icon, String unit, String min, String max, String startupValue)
