@@ -15,7 +15,7 @@
   ],
   "license": "Apache-2.0",
   "frameworks": "arduino",
-  "platforms": ["espressif8266", "espressif32"]
+  "platforms": ["espressif8266", "espressif32"],
   "dependencies": {
     "ArduinoJson": ">=7.0.0"
   }
